@@ -149,7 +149,7 @@ async def chat_endpoint(
             context = provider()
 
     async def _event_gen():
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         q: asyncio.Queue = asyncio.Queue()
 
         def _stream():
@@ -158,11 +158,11 @@ async def chat_endpoint(
                     loop.call_soon_threadsafe(q.put_nowait, ("token", token))
             except Exception as exc:
                 loop.call_soon_threadsafe(q.put_nowait, ("error", str(exc)))
-            finally:
+            else:
                 loop.call_soon_threadsafe(q.put_nowait, ("done", None))
 
         _start = time.monotonic()
-        loop.run_in_executor(_EXECUTOR, _stream)
+        asyncio.ensure_future(loop.run_in_executor(_EXECUTOR, _stream))
 
         while True:
             kind, value = await q.get()
