@@ -24,6 +24,7 @@ from jarvis.memory.store import Store
 _CONFIG_PATH = Path(__file__).parent.parent.parent.parent / "config" / "config.yaml"
 _DIST_PATH = Path(__file__).parent.parent.parent.parent / "web" / "dist"
 _EXECUTOR = ThreadPoolExecutor(max_workers=1)
+_cfg_cache: Optional[dict] = None
 
 app = FastAPI(title="Jarvis")
 app.add_middleware(
@@ -40,8 +41,11 @@ _brain: Optional[Brain] = None
 
 
 def _load_config() -> dict:
-    with _CONFIG_PATH.open() as f:
-        return yaml.safe_load(f)
+    global _cfg_cache
+    if _cfg_cache is None:
+        with _CONFIG_PATH.open() as f:
+            _cfg_cache = yaml.safe_load(f)
+    return _cfg_cache
 
 
 def get_store() -> Store:
