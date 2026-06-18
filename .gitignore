@@ -21,6 +21,10 @@ data/
 # Brainstorming session files
 .superpowers/
 
+# Frontend — track dist (Pi serves it), ignore build deps
+web/node_modules/
+web/.vite/
+
 # Misc
 *.log
 .DS_Store

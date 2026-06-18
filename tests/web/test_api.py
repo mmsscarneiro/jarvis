@@ -64,3 +64,18 @@ def test_delete_project_not_found(client):
     mock_store.delete.return_value = False
     resp = tc.delete("/api/projects/Missing")
     assert resp.status_code == 404
+
+
+def test_chat_streams_tokens(client):
+    tc, _, mock_brain = client
+    mock_brain.chat.return_value = iter(["Olá", " mundo", "!"])
+    resp = tc.post("/api/chat", json={"message": "oi"})
+    assert resp.status_code == 200
+    assert "text/event-stream" in resp.headers["content-type"]
+
+
+def test_reset_history(client):
+    tc, _, mock_brain = client
+    resp = tc.delete("/api/chat/history")
+    assert resp.status_code == 204
+    mock_brain.reset.assert_called_once()

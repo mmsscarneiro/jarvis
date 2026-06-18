@@ -132,3 +132,67 @@ def update_project(name: str, body: ProjectUpdate, store: Store = Depends(get_st
 def delete_project(name: str, store: Store = Depends(get_store)):
     if not store.delete(name):
         raise HTTPException(404, f"Projeto '{name}' não encontrado.")
+
+
+# ── /api/chat ─────────────────────────────────────────────────────────────────
+
+@app.post("/api/chat")
+async def chat_endpoint(
+    body: ChatBody,
+    store: Store = Depends(get_store),
+    brain: Brain = Depends(get_brain),
+):
+    context: Optional[str] = None
+    if body.context_project:
+        provider = get_provider(body.context_project, store)
+        if provider:
+            context = provider()
+
+    async def _event_gen():
+        loop = asyncio.get_event_loop()
+        q: asyncio.Queue = asyncio.Queue()
+
+        def _stream():
+            try:
+                for token in brain.chat(body.message, context=context):
+                    loop.call_soon_threadsafe(q.put_nowait, ("token", token))
+            except Exception as exc:
+                loop.call_soon_threadsafe(q.put_nowait, ("error", str(exc)))
+            finally:
+                loop.call_soon_threadsafe(q.put_nowait, ("done", None))
+
+        _start = time.monotonic()
+        loop.run_in_executor(_EXECUTOR, _stream)
+
+        while True:
+            kind, value = await q.get()
+            if kind == "token":
+                yield {"data": json.dumps({"token": value})}
+            elif kind == "error":
+                yield {"data": json.dumps({"error": value})}
+                break
+            else:
+                ms = round((time.monotonic() - _start) * 1000)
+                yield {"data": json.dumps({"done": True, "latency_ms": ms})}
+                break
+
+    return EventSourceResponse(_event_gen())
+
+
+@app.delete("/api/chat/history", status_code=204)
+def reset_chat(brain: Brain = Depends(get_brain)):
+    brain.reset()
+
+
+# ── SPA fallback (must be last) ───────────────────────────────────────────────
+
+if (_DIST_PATH / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(_DIST_PATH / "assets")), name="assets")
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def spa_fallback(full_path: str):
+    index = _DIST_PATH / "index.html"
+    if index.exists():
+        return FileResponse(str(index))
+    return {"message": "Frontend não compilado. Corre: cd web && npm run build"}
