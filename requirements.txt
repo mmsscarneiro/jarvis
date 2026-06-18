@@ -1,0 +1,3 @@
+# Phase 0 — connectivity check
+pyyaml>=6.0
+requests>=2.31

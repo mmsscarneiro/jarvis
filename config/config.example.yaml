@@ -1,0 +1,14 @@
+# Copy this file to config/config.yaml and fill in your values.
+# config.yaml is git-ignored — never commit real values.
+
+brain:
+  laptop_ip: "192.168.1.x"   # LAN IP of the laptop running Ollama
+  ollama_port: 11434
+  model: "qwen3:4b"           # which Ollama model to use; benchmark a few for pt-PT quality
+
+voice:
+  language: "pt"              # Whisper language code (ISO 639-1)
+  wakeword: "hey jarvis"      # openWakeWord trigger phrase
+
+tts:
+  voice: "pt_PT-tugao-medium" # Piper pt-PT voice identifier

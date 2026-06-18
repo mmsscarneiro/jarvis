@@ -1,0 +1,8 @@
+# Normalize all text files to LF (the Pi is Linux)
+* text=auto eol=lf
+
+# Explicitly mark binary formats
+*.png binary
+*.jpg binary
+*.wav binary
+*.onnx binary

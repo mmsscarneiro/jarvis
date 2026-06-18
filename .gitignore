@@ -1,0 +1,20 @@
+# User config — never commit real values
+config/config.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+*.log
+.DS_Store
