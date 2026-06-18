@@ -100,3 +100,34 @@ def api_status(store: Store = Depends(get_store), brain: Brain = Depends(get_bra
         "projects_count": len(store.list_all()),
         "last_latency_ms": brain.last_latency_ms,
     }
+
+
+# ── /api/projects ─────────────────────────────────────────────────────────────
+
+@app.get("/api/projects")
+def list_projects(store: Store = Depends(get_store)):
+    return [asdict(p) for p in store.list_all()]
+
+
+@app.post("/api/projects", status_code=201)
+def create_project(body: ProjectCreate, store: Store = Depends(get_store)):
+    try:
+        p = store.create(body.name, goal=body.goal, status=body.status)
+        return asdict(p)
+    except Exception:
+        raise HTTPException(409, f"Projeto '{body.name}' já existe.")
+
+
+@app.patch("/api/projects/{name}")
+def update_project(name: str, body: ProjectUpdate, store: Store = Depends(get_store)):
+    fields = {k: v for k, v in body.model_dump().items() if v is not None}
+    p = store.update(name, **fields)
+    if p is None:
+        raise HTTPException(404, f"Projeto '{name}' não encontrado.")
+    return asdict(p)
+
+
+@app.delete("/api/projects/{name}", status_code=204)
+def delete_project(name: str, store: Store = Depends(get_store)):
+    if not store.delete(name):
+        raise HTTPException(404, f"Projeto '{name}' não encontrado.")
