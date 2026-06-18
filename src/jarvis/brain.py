@@ -3,17 +3,18 @@
 import json
 import sys
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Optional
 
 import requests
 import yaml
 
 CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "config.yaml"
-REQUEST_TIMEOUT = 60  # seconds; LLM first-token latency can be a few seconds
+REQUEST_TIMEOUT = 60  # seconds
 
 SYSTEM_PROMPT = (
-    "És o Jarvis, um assistente pessoal inteligente. "
-    "Responde sempre em português europeu (pt-PT), de forma concisa e direta. "
+    "És o Jarvis, o assistente pessoal do teu utilizador. "
+    "Fala sempre em português europeu (pt-PT), de forma casual e descontraída — "
+    "como um amigo inteligente. Usa 'tu', frases curtas e vai direto ao assunto. "
     "Nunca respondas em inglês, mesmo que a pergunta seja em inglês."
 )
 
@@ -38,31 +39,36 @@ class Brain:
         self.model: str = b["model"]
         self._history: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    def chat(self, user_message: str) -> Iterator[str]:
+    def chat(self, user_message: str, context: Optional[str] = None) -> Iterator[str]:
         """Send *user_message* and yield response tokens as they stream in.
 
-        On connection failure, yields a Portuguese error message instead of raising.
+        *context* is injected as a temporary system note for this turn only —
+        it does not get stored in the conversation history.
         """
-        self._history.append({"role": "user", "content": user_message})
+        # Build per-request messages without mutating history yet
+        messages = list(self._history)
+        if context:
+            messages.append({
+                "role": "system",
+                "content": f"Contexto relevante para esta resposta:\n{context}",
+            })
+        messages.append({"role": "user", "content": user_message})
 
         try:
             resp = requests.post(
                 f"{self.base_url}/api/chat",
-                json={"model": self.model, "messages": self._history, "stream": True},
+                json={"model": self.model, "messages": messages, "stream": True},
                 stream=True,
                 timeout=REQUEST_TIMEOUT,
             )
             resp.raise_for_status()
         except requests.exceptions.ConnectionError:
-            self._history.pop()
             yield "[Erro: não consigo ligar ao cérebro. O portátil está ligado e o Ollama a correr?]"
             return
         except requests.exceptions.Timeout:
-            self._history.pop()
             yield "[Erro: o cérebro demorou demasiado a responder.]"
             return
         except requests.exceptions.HTTPError as exc:
-            self._history.pop()
             yield f"[Erro do Ollama: {exc}]"
             return
 
@@ -78,8 +84,10 @@ class Brain:
             if data.get("done"):
                 break
 
+        # Persist only the actual user/assistant exchange — not the ephemeral context
+        self._history.append({"role": "user", "content": user_message})
         self._history.append({"role": "assistant", "content": full_response})
 
     def reset(self) -> None:
-        """Clear conversation history (keeps system prompt)."""
+        """Clear conversation history, keeping the system prompt."""
         self._history = [self._history[0]]

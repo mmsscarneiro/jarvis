@@ -15,6 +15,9 @@ build/
 .vscode/
 .idea/
 
+# Runtime data (DB lives here — never commit)
+data/
+
 # Misc
 *.log
 .DS_Store
