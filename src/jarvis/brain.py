@@ -2,6 +2,7 @@
 
 import json
 import sys
+import time
 from pathlib import Path
 from typing import Iterator, Optional
 
@@ -38,6 +39,7 @@ class Brain:
         self.base_url = f"http://{b['laptop_ip']}:{b['ollama_port']}"
         self.model: str = b["model"]
         self._history: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.last_latency_ms: float = 0.0
 
     def chat(self, user_message: str, context: Optional[str] = None) -> Iterator[str]:
         """Send *user_message* and yield response tokens as they stream in.
@@ -54,6 +56,7 @@ class Brain:
             })
         messages.append({"role": "user", "content": user_message})
 
+        _start = time.monotonic()
         try:
             resp = requests.post(
                 f"{self.base_url}/api/chat",
@@ -84,6 +87,7 @@ class Brain:
             if data.get("done"):
                 break
 
+        self.last_latency_ms = round((time.monotonic() - _start) * 1000)
         # Persist only the actual user/assistant exchange — not the ephemeral context
         self._history.append({"role": "user", "content": user_message})
         self._history.append({"role": "assistant", "content": full_response})

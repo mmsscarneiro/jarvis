@@ -12,3 +12,6 @@ voice:
 
 tts:
   voice: "pt_PT-tugao-medium" # Piper pt-PT voice identifier
+
+web:
+  port: 7777                  # FastAPI server port on the Pi

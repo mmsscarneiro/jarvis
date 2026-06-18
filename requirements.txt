@@ -1,3 +1,12 @@
 # Phase 0 — connectivity check
 pyyaml>=6.0
 requests>=2.31
+
+# Phase 1+2 — brain + memory
+# (no extra deps beyond stdlib)
+
+# Web UI — FastAPI server
+fastapi>=0.111
+uvicorn[standard]>=0.30
+sse-starlette>=1.8
+httpx>=0.27          # needed by FastAPI TestClient
