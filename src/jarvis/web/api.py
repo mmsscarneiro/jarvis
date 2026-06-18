@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import sqlite3
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
@@ -113,9 +114,9 @@ def list_projects(store: Store = Depends(get_store)):
 def create_project(body: ProjectCreate, store: Store = Depends(get_store)):
     try:
         p = store.create(body.name, goal=body.goal, status=body.status)
-        return asdict(p)
-    except Exception:
+    except sqlite3.IntegrityError:
         raise HTTPException(409, f"Projeto '{body.name}' já existe.")
+    return asdict(p)
 
 
 @app.patch("/api/projects/{name}")

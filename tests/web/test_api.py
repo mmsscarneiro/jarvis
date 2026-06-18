@@ -29,7 +29,8 @@ def test_create_project(client):
 
 def test_create_project_duplicate(client):
     tc, mock_store, _ = client
-    mock_store.create.side_effect = Exception("duplicate")
+    import sqlite3
+    mock_store.create.side_effect = sqlite3.IntegrityError("UNIQUE constraint failed")
     resp = tc.post("/api/projects", json={"name": "Dup"})
     assert resp.status_code == 409
 
