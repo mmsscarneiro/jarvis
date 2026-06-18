@@ -39,7 +39,7 @@ class Brain:
         self.base_url = f"http://{b['laptop_ip']}:{b['ollama_port']}"
         self.model: str = b["model"]
         self._history: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
-        self.last_latency_ms: float = 0.0
+        self.last_latency_ms: int = 0
 
     def chat(self, user_message: str, context: Optional[str] = None) -> Iterator[str]:
         """Send *user_message* and yield response tokens as they stream in.
@@ -66,12 +66,15 @@ class Brain:
             )
             resp.raise_for_status()
         except requests.exceptions.ConnectionError:
+            self.last_latency_ms = round((time.monotonic() - _start) * 1000)
             yield "[Erro: não consigo ligar ao cérebro. O portátil está ligado e o Ollama a correr?]"
             return
         except requests.exceptions.Timeout:
+            self.last_latency_ms = round((time.monotonic() - _start) * 1000)
             yield "[Erro: o cérebro demorou demasiado a responder.]"
             return
         except requests.exceptions.HTTPError as exc:
+            self.last_latency_ms = round((time.monotonic() - _start) * 1000)
             yield f"[Erro do Ollama: {exc}]"
             return
 
