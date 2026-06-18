@@ -18,6 +18,9 @@ build/
 # Runtime data (DB lives here — never commit)
 data/
 
+# Brainstorming session files
+.superpowers/
+
 # Misc
 *.log
 .DS_Store
