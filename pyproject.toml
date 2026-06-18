@@ -20,5 +20,11 @@ line-length = 100
 [tool.black]
 line-length = 100
 
+[project.scripts]
+jarvis = "jarvis.orchestrator:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
