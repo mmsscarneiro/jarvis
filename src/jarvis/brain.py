@@ -60,7 +60,13 @@ class Brain:
         try:
             resp = requests.post(
                 f"{self.base_url}/api/chat",
-                json={"model": self.model, "messages": messages, "stream": True},
+                json={
+                    "model": self.model,
+                    "messages": messages,
+                    "stream": True,
+                    "think": False,       # disable qwen3 chain-of-thought — much faster
+                    "keep_alive": -1,     # keep model loaded in VRAM indefinitely
+                },
                 stream=True,
                 timeout=REQUEST_TIMEOUT,
             )
