@@ -63,6 +63,16 @@ export function useChat() {
           }
         }
       }
+
+      // Ensure streaming is cleared if the stream ended without a done event
+      setStreaming(false)
+      setMessages(prev => {
+        const next = [...prev]
+        if (next.length > 0) {
+          next[next.length - 1] = { ...next[next.length - 1], streaming: false }
+        }
+        return next
+      })
     } catch {
       setMessages(prev => {
         const next = [...prev]
