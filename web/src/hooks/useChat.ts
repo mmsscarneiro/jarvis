@@ -61,6 +61,16 @@ export function useChat() {
             })
             setStreaming(false)
           }
+
+          if (data.error) {
+            setMessages(prev => {
+              const next = [...prev]
+              next[next.length - 1] = { role: 'jarvis', content: `[Erro: ${data.error}]`, streaming: false }
+              return next
+            })
+            setStreaming(false)
+            break
+          }
         }
       }
 

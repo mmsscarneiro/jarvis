@@ -13,7 +13,7 @@ import requests
 import yaml
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
@@ -186,7 +186,7 @@ def reset_chat(brain: Brain = Depends(get_brain)):
 
 # ── SPA fallback (must be last) ───────────────────────────────────────────────
 
-if (_DIST_PATH / "assets").exists():
+if (_DIST_PATH / "assets").exists() and (_DIST_PATH / "index.html").exists():
     app.mount("/assets", StaticFiles(directory=str(_DIST_PATH / "assets")), name="assets")
 
 
@@ -195,4 +195,7 @@ async def spa_fallback(full_path: str):
     index = _DIST_PATH / "index.html"
     if index.exists():
         return FileResponse(str(index))
-    return {"message": "Frontend não compilado. Corre: cd web && npm run build"}
+    return HTMLResponse(
+        "<pre>Frontend não compilado.\nCorre: cd web &amp;&amp; npm run build</pre>",
+        status_code=503,
+    )
